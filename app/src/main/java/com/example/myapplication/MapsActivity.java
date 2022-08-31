@@ -5,6 +5,8 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import com.google.android.gms.maps.model.Dash;
@@ -21,28 +23,25 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.myapplication.databinding.ActivityMapsBinding;
-import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapClickListener{
+public class MapsActivity extends FragmentActivity implements View.OnClickListener,OnMapReadyCallback, GoogleMap.OnMapClickListener{
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private ArrayList<Marker> MarkerList = new ArrayList<>();
     private PolygonOptions AreaOfInterest;
     private Polygon polygon;
+    public Button bt_rewind;
 
     ArrayList<Marker> markerList = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -50,6 +49,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        registerButton();
+    }
+    private void registerButton(){
+        bt_rewind = findViewById(R.id.bt_rewind);
+        bt_rewind.setOnClickListener(this);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.bt_rewind: {
+                withDrawMarker();
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    private void withDrawMarker(){
+        if (MarkerList.size() == 0){
+            setResultToToast("There is no points to rewind");
+            return;
+        }
+        setResultToToast("rewind last point");
+        Marker lst_marker = MarkerList.get(MarkerList.size()-1);
+        MarkerList.remove(MarkerList.size()-1);
+        lst_marker.remove();
+        if (MarkerList.size()>0){
+            renderPolygon();
+        }
+
     }
 
     /**
@@ -92,7 +123,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onMarkerDragEnd(Marker marker) {
-                drawPolygon();
+                renderPolygon();
             }
         });
     }
@@ -102,9 +133,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         markerOptions.position(point);
         Marker marker = mMap.addMarker(markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.pin_icon)).draggable(true).title(String.valueOf(MarkerList.size()+1)));
         MarkerList.add(marker);
-        drawPolygon();
+        renderPolygon();
     }
-    public void drawPolygon(){
+    public void renderPolygon(){
         try{
             polygon.remove();
         }
